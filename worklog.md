@@ -31,3 +31,29 @@ Stage Summary:
 - Categories can be created and assigned to words inline
 - Quiz mode correctly displays questions, accepts answers, shows correct/incorrect feedback, tracks score
 - Lint passes cleanly
+
+---
+Task ID: audio-fix
+Agent: main (Super Z)
+Task: Fix TTS pronunciation — words were being read in English/Chinese instead of German.
+
+Work Log:
+- Diagnosed: Z.ai's TTS API only supports Chinese/English voices (tongtong, jam, etc.). No German voice available.
+- Solution: Replace Z.ai TTS with proper German TTS engine:
+  - Primary: gTTS (Google Translate TTS) via Python — high quality, native German pronunciation, requires internet
+  - Fallback: espeak-ng (offline) with German voice `de`
+  - Both produce mp3 output via ffmpeg when available
+- Created `/home/z/my-project/scripts/generate_tts.py` that runs gTTS first, then espeak-ng fallback
+- Rewrote `/home/z/my-project/src/app/api/audio/route.ts` to spawn the Python script via execFile
+- Updated signature to accept `lang` (default 'de') and `speed` (default 0.95) instead of voice
+- Updated client `api.generateAudio` and all callers (words-tab, learn-tab, quiz-tab) to pass `lang: 'de'`
+- Created `/home/z/my-project/scripts/regenerate_all_audio.ts` to bulk-regenerate audio for existing words
+- Cleared all old audio files in /public/audio/
+- Regenerated audio for all 9 existing words (Haus, Apfel, Hund, Schule, Buch, Wasser, Freund, Stadt, Blume) — all now proper German pronunciation
+- Verified with Agent Browser: audio plays correctly in Learn tab and Quiz tab (pronunciation mode)
+
+Stage Summary:
+- All words now play with correct German pronunciation (Google Translate TTS voice)
+- Files saved as .mp3 instead of .wav (smaller, better browser support)
+- The system gracefully falls back to offline espeak-ng German voice if gTTS is unavailable
+- Lint passes cleanly

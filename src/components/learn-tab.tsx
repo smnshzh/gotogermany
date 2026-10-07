@@ -62,7 +62,7 @@ export function LearnTab({ words, categories }: Props) {
     setGeneratingIds((s) => ({ ...s, [current.id]: true }));
     let cancelled = false;
     const text = current.example || `${current.article || ''} ${current.german}`.trim();
-    api.generateAudio(text).then((url) => {
+    api.generateAudio(text, { lang: 'de', speed: 0.95 }).then((url) => {
       if (cancelled || !url) return;
       setGeneratedAudio({ wordId: current.id, url });
       api.updateWord(current.id, { audioUrl: url }).catch(() => {});

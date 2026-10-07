@@ -116,7 +116,7 @@ export function QuizTab({ words, categories }: Props) {
     setGeneratingIds((s) => ({ ...s, [q.word.id]: true }));
     let cancelled = false;
     const text = q.word.example || `${q.word.article || ''} ${q.word.german}`.trim();
-    api.generateAudio(text).then((url) => {
+    api.generateAudio(text, { lang: 'de', speed: 0.95 }).then((url) => {
       if (cancelled || !url) return;
       setGeneratedUrl(url);
       api.updateWord(q.word.id, { audioUrl: url }).catch(() => {});

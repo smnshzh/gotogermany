@@ -89,7 +89,7 @@ export function WordsTab({ words, categories, loading, onReload }: Props) {
       return null;
     }
     try {
-      const url = await api.generateAudio(t, { speed: 0.9 });
+      const url = await api.generateAudio(t, { lang: 'de', speed: 0.95 });
       if (!text) setAudioUrl(url); // store on form state if form audio
       toast.success('فایل صوتی ساخته شد');
       return url;
@@ -388,7 +388,7 @@ export function WordsTab({ words, categories, loading, onReload }: Props) {
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0">
                       <AudioButton url={w.audioUrl} text={w.german} onMissing={async () => {
-                        const u = await api.generateAudio(w.example || w.german);
+                        const u = await api.generateAudio(w.example || w.german, { lang: 'de', speed: 0.95 });
                         if (u) await api.updateWord(w.id, { audioUrl: u });
                         onReload();
                         return u;

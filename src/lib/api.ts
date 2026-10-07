@@ -65,11 +65,24 @@ export async function enrichWord(word: string): Promise<EnrichResult> {
   return r;
 }
 
-export async function generateAudio(text: string, opts?: { voice?: string; speed?: number }): Promise<string> {
+export async function generateAudio(
+  text: string,
+  opts?: { lang?: string; speed?: number }
+): Promise<string> {
   const r = await j<{ url: string }>(await fetch('/api/audio', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, voice: opts?.voice ?? 'tongtong', speed: opts?.speed ?? 0.9 }),
+    body: JSON.stringify({
+      text,
+      lang: opts?.lang ?? 'de',
+      speed: opts?.speed ?? 0.95,
+    }),
   }));
   return r.url;
+}
+
+/** Generate audio for a word's German example or the word itself. */
+export async function generateGermanAudio(word: Pick<Word, 'german' | 'article' | 'example'>): Promise<string> {
+  const text = word.example?.trim() || `${word.article || ''} ${word.german}`.trim();
+  return generateAudio(text, { lang: 'de', speed: 0.9 });
 }
