@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String   @default("emerald")
+  createdAt   DateTime @default(now())
+  words       Word[]
+}
+
+model Word {
+  id         String   @id @default(cuid())
+  german     String
+  article    String? // der | die | das (or empty for non-nouns)
+  plural     String?
+  ipa        String? // phonetic transcription
+  persian    String
+  example    String? // German example sentence
+  exampleFa String? // Persian translation of the example
+  audioUrl   String? // path to TTS mp3 in /public/audio
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+}
