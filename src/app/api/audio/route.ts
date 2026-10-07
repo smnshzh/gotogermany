@@ -12,6 +12,7 @@ interface TtsOptions {
   text: string;
   lang?: string; // 'de' for German, 'fa' for Persian
   speed?: number; // 0.5 - 2.0
+  voice?: string; // 'default' | 'male' | 'female'
 }
 
 interface TtsResult {
@@ -22,11 +23,18 @@ interface TtsResult {
 const SCRIPT_PATH = '/home/z/my-project/scripts/generate_tts.py';
 
 /**
- * German (and other language) TTS using gTTS (Google Translate TTS) as the primary engine
- * with espeak-ng as offline fallback. Both produce proper German pronunciation.
+ * Multilingual TTS using edge-tts (Microsoft Edge Neural TTS) as the primary engine.
+ * Supports Persian (fa-IR) and German (de-DE) with native pronunciation.
+ * Falls back to gTTS (Google Translate) for non-Persian, then espeak-ng offline.
  */
-async function generateTts({ text, lang = 'de', speed = 1.0 }: TtsOptions): Promise<TtsResult> {
-  const args = [SCRIPT_PATH, '--text', text, '--lang', lang, '--speed', String(speed)];
+async function generateTts({ text, lang = 'de', speed = 1.0, voice = 'default' }: TtsOptions): Promise<TtsResult> {
+  const args = [
+    SCRIPT_PATH,
+    '--text', text,
+    '--lang', lang,
+    '--speed', String(speed),
+    '--voice', voice,
+  ];
   try {
     const { stdout } = await execFileAsync('python3', args, {
       encoding: 'utf-8',
@@ -37,7 +45,6 @@ async function generateTts({ text, lang = 'de', speed = 1.0 }: TtsOptions): Prom
     if (!match) throw new Error('TTS script returned no output path');
     const outPath = match[1];
     const buffer = await fs.readFile(outPath);
-    // cleanup
     await fs.unlink(outPath).catch(() => {});
     const isMp3 = outPath.toLowerCase().endsWith('.mp3');
     return { buffer, format: isMp3 ? 'mp3' : 'wav' };
@@ -49,12 +56,12 @@ async function generateTts({ text, lang = 'de', speed = 1.0 }: TtsOptions): Prom
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, lang = 'de', speed = 0.95 } = await req.json();
+    const { text, lang = 'de', speed = 0.95, voice = 'default' } = await req.json();
     if (!text || typeof text !== 'string' || !text.trim()) {
       return NextResponse.json({ error: 'text is required' }, { status: 400 });
     }
-    const safe = text.slice(0, 1000);
-    const { buffer, format } = await generateTts({ text: safe, lang, speed });
+    const safe = text.slice(0, 3000); // edge-tts supports longer text
+    const { buffer, format } = await generateTts({ text: safe, lang, speed, voice });
 
     const audioDir = path.join(process.cwd(), 'public', 'audio');
     await mkdir(audioDir, { recursive: true });

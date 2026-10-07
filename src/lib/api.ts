@@ -1,4 +1,4 @@
-import type { Category, Word, EnrichResult } from './types';
+import type { Category, Word, EnrichResult, Podcast } from './types';
 
 async function j<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -67,7 +67,7 @@ export async function enrichWord(word: string): Promise<EnrichResult> {
 
 export async function generateAudio(
   text: string,
-  opts?: { lang?: string; speed?: number }
+  opts?: { lang?: string; speed?: number; voice?: string }
 ): Promise<string> {
   const r = await j<{ url: string }>(await fetch('/api/audio', {
     method: 'POST',
@@ -76,6 +76,7 @@ export async function generateAudio(
       text,
       lang: opts?.lang ?? 'de',
       speed: opts?.speed ?? 0.95,
+      voice: opts?.voice ?? 'default',
     }),
   }));
   return r.url;
@@ -84,5 +85,62 @@ export async function generateAudio(
 /** Generate audio for a word's German example or the word itself. */
 export async function generateGermanAudio(word: Pick<Word, 'german' | 'article' | 'example'>): Promise<string> {
   const text = word.example?.trim() || `${word.article || ''} ${word.german}`.trim();
-  return generateAudio(text, { lang: 'de', speed: 0.9 });
+  return generateAudio(text, { lang: 'de', speed: 0.95, voice: 'female' });
+}
+
+// === Podcasts ===
+export async function fetchPodcasts(): Promise<Podcast[]> {
+  const r = await j<{ podcasts: Podcast[] }>(await fetch('/api/podcasts'));
+  return r.podcasts;
+}
+
+export async function createPodcast(input: {
+  topic: string;
+  title: string;
+  script: string;
+  duration?: string;
+  audioUrl?: string | null;
+}): Promise<Podcast> {
+  const r = await j<{ podcast: Podcast }>(await fetch('/api/podcasts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  }));
+  return r.podcast;
+}
+
+export async function updatePodcast(id: string, input: Partial<Podcast>): Promise<Podcast> {
+  const r = await j<{ podcast: Podcast }>(await fetch(`/api/podcasts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  }));
+  return r.podcast;
+}
+
+export async function deletePodcast(id: string): Promise<void> {
+  await fetch(`/api/podcasts/${id}`, { method: 'DELETE' });
+}
+
+export interface PodcastScript {
+  title: string;
+  script: string;
+  duration: string;
+}
+
+export async function generatePodcastScript(
+  topic: string,
+  opts?: { length?: 'short' | 'medium' | 'long'; style?: 'narrative' | 'qa' | 'list' | 'story'; words?: Word[] }
+): Promise<PodcastScript> {
+  const r = await j<PodcastScript>(await fetch('/api/ai/podcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic,
+      length: opts?.length ?? 'short',
+      style: opts?.style ?? 'narrative',
+      words: opts?.words,
+    }),
+  }));
+  return r;
 }

@@ -33,3 +33,14 @@ export interface EnrichResult {
   example: string | null;
   exampleFa: string | null;
 }
+
+export interface Podcast {
+  id: string;
+  topic: string;
+  title: string;
+  script: string;
+  duration?: string | null;
+  audioUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

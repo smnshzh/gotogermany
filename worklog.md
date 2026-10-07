@@ -57,3 +57,37 @@ Stage Summary:
 - Files saved as .mp3 instead of .wav (smaller, better browser support)
 - The system gracefully falls back to offline espeak-ng German voice if gTTS is unavailable
 - Lint passes cleanly
+
+---
+Task ID: podcast-feature
+Agent: main (Super Z)
+Task: Add AI-powered podcast generation feature (Persian script + Persian audio).
+
+Work Log:
+- Installed `edge-tts` (Microsoft Edge Neural TTS) — supports both Persian (fa-IR) and German (de-DE) with native pronunciation
+  - Persian voices: fa-IR-DilaraNeural (female), fa-IR-FaridNeural (male)
+  - German voices: de-DE-ConradNeural, de-DE-AmalaNeural, etc.
+- Rewrote `/home/z/my-project/scripts/generate_tts.py` to try edge-tts first, then gTTS (non-Persian only), then espeak-ng as last resort
+- Updated `/api/audio` route to accept `voice` parameter ('default' | 'male' | 'female')
+- Added `Podcast` model to Prisma schema (topic, title, script, duration, audioUrl)
+- Created API routes:
+  - `/api/podcasts` (GET list, POST create)
+  - `/api/podcasts/[id]` (PUT update, DELETE)
+  - `/api/ai/podcast` — uses Z.ai LLM with custom Persian system prompt to generate podcast script with title, body, duration. Supports length (short/medium/long), style (narrative/qa/list/story), and optional word hints from the user's vocabulary list.
+- Built PodcastTab component with:
+  - Topic input + length + style selection
+  - Generate button that calls LLM
+  - Editable generated title/script
+  - Voice gender selector (default/male/female)
+  - Audio generation with play/pause controls and download link
+  - Save button to persist to database
+  - Saved podcasts list with audio player and regenerate-audio action
+- Added "پادکست" tab to main page (5th tab)
+- Verified end-to-end with Agent Browser: topic entry → AI script generation → audio generation → save → list display
+
+Stage Summary:
+- Persian TTS now uses native Persian voice (Farid male or Dilara female) instead of fallback English/Chinese
+- German TTS now also uses edge-tts neural voice (much better quality than gTTS)
+- Podcast feature is fully functional: input topic → AI writes script → AI generates Persian audio → save/list/replay
+- All lint checks pass
+- Existing word audio may still use old gTTS mp3s; new words/podcasts will use the better edge-tts voices

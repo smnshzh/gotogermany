@@ -37,3 +37,14 @@ model Word {
 
   @@index([categoryId])
 }
+
+model Podcast {
+  id        String   @id @default(cuid())
+  topic     String
+  title     String
+  script    String
+  duration  String?  // estimated duration like "2-3 min"
+  audioUrl  String?  // path to TTS mp3 in /public/audio
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -4,26 +4,29 @@ import { useCallback, useEffect, useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, FolderTree, GraduationCap, Brain, Sparkles, Loader2 } from 'lucide-react';
+import { BookOpen, FolderTree, GraduationCap, Brain, Sparkles, Mic, Loader2 } from 'lucide-react';
 import { WordsTab } from '@/components/words-tab';
 import { CategoriesTab } from '@/components/categories-tab';
 import { LearnTab } from '@/components/learn-tab';
 import { QuizTab } from '@/components/quiz-tab';
-import type { Category, Word } from '@/lib/types';
+import { PodcastTab } from '@/components/podcast-tab';
+import type { Category, Word, Podcast } from '@/lib/types';
 import * as api from '@/lib/api';
 
 export default function Home() {
   const [words, setWords] = useState<Word[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('words');
 
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const [w, c] = await Promise.all([api.fetchWords(), api.fetchCategories()]);
+      const [w, c, p] = await Promise.all([api.fetchWords(), api.fetchCategories(), api.fetchPodcasts()]);
       setWords(w);
       setCategories(c);
+      setPodcasts(p);
     } catch (e) {
       console.error('reload', e);
     } finally {
@@ -57,13 +60,16 @@ export default function Home() {
             <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200">
               {categories.length} دسته
             </Badge>
+            <Badge variant="secondary" className="bg-rose-50 text-rose-700 border-rose-200">
+              {podcasts.length} پادکست
+            </Badge>
           </div>
         </div>
       </header>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6 h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-6 h-auto">
             <TabsTrigger value="words" className="py-2">
               <BookOpen size={16} className="ml-1.5" />
               کلمات
@@ -79,6 +85,10 @@ export default function Home() {
             <TabsTrigger value="quiz" className="py-2">
               <Brain size={16} className="ml-1.5" />
               آزمون
+            </TabsTrigger>
+            <TabsTrigger value="podcast" className="py-2">
+              <Mic size={16} className="ml-1.5" />
+              پادکست
             </TabsTrigger>
           </TabsList>
 
@@ -102,6 +112,10 @@ export default function Home() {
 
           <TabsContent value="quiz" className="mt-0">
             <QuizTab words={words} categories={categories} />
+          </TabsContent>
+
+          <TabsContent value="podcast" className="mt-0">
+            <PodcastTab podcasts={podcasts} loading={loading} onReload={reload} />
           </TabsContent>
         </Tabs>
       </main>
