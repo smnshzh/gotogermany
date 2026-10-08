@@ -22,6 +22,7 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
         topic: body.topic?.trim() ?? undefined,
         title: body.title?.trim() ?? undefined,
         script: body.script?.trim() ?? undefined,
+        language: body.language?.trim() ?? undefined,
         duration: body.duration?.trim() ?? undefined,
         audioUrl: body.audioUrl ?? undefined,
       },

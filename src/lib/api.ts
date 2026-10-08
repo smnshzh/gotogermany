@@ -126,17 +126,19 @@ export interface PodcastScript {
   title: string;
   script: string;
   duration: string;
+  language?: string;
 }
 
 export async function generatePodcastScript(
   topic: string,
-  opts?: { length?: 'short' | 'medium' | 'long'; style?: 'narrative' | 'qa' | 'list' | 'story'; words?: Word[] }
+  opts?: { language?: string; length?: 'short' | 'medium' | 'long'; style?: 'narrative' | 'qa' | 'list' | 'story'; words?: Word[] }
 ): Promise<PodcastScript> {
   const r = await j<PodcastScript>(await fetch('/api/ai/podcast', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       topic,
+      language: opts?.language ?? 'fa',
       length: opts?.length ?? 'short',
       style: opts?.style ?? 'narrative',
       words: opts?.words,

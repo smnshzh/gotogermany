@@ -35,19 +35,33 @@ const STYLE_OPTIONS = [
 ];
 
 const VOICE_OPTIONS = [
-  { value: 'default', label: 'پیش‌فرض (مذکر)' },
-  { value: 'male', label: 'مذکر (فرید)' },
-  { value: 'female', label: 'مؤنث (دیلارا)' },
+  { value: 'default', label: 'پیش‌فرض' },
+  { value: 'male', label: 'مذکر' },
+  { value: 'female', label: 'مؤنث' },
 ];
+
+const LANGUAGE_OPTIONS = [
+  { value: 'fa', label: 'فارسی', flag: '🇮🇷' },
+  { value: 'de', label: 'آلمانی', flag: '🇩🇪' },
+  { value: 'en', label: 'انگلیسی', flag: '🇬🇧' },
+  { value: 'fr', label: 'فرانسوی', flag: '🇫🇷' },
+  { value: 'es', label: 'اسپانیایی', flag: '🇪🇸' },
+  { value: 'tr', label: 'ترکی', flag: '🇹🇷' },
+  { value: 'ar', label: 'عربی', flag: '🇸🇦' },
+];
+
+const LANG_LABEL: Record<string, string> = Object.fromEntries(LANGUAGE_OPTIONS.map((l) => [l.value, l.label]));
 
 export function PodcastTab({ podcasts, loading, onReload }: Props) {
   const [topic, setTopic] = useState('');
+  const [language, setLanguage] = useState<string>('fa');
   const [length, setLength] = useState<'short' | 'medium' | 'long'>('short');
   const [style, setStyle] = useState<'narrative' | 'qa' | 'list' | 'story'>('narrative');
   const [generating, setGenerating] = useState(false);
   const [genTitle, setGenTitle] = useState('');
   const [genScript, setGenScript] = useState('');
   const [genDuration, setGenDuration] = useState('');
+  const [genLanguage, setGenLanguage] = useState<string>('fa');
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [voice, setVoice] = useState<'default' | 'male' | 'female'>('default');
@@ -65,10 +79,11 @@ export function PodcastTab({ podcasts, loading, onReload }: Props) {
     setGenDuration('');
     setAudioUrl(null);
     try {
-      const r = await api.generatePodcastScript(topic.trim(), { length, style });
+      const r = await api.generatePodcastScript(topic.trim(), { language, length, style });
       setGenTitle(r.title);
       setGenScript(r.script);
       setGenDuration(r.duration);
+      setGenLanguage(r.language || language);
       toast.success('متن پادکست آماده شد');
     } catch (e) {
       console.error(e);
@@ -82,7 +97,7 @@ export function PodcastTab({ podcasts, loading, onReload }: Props) {
     if (!genScript) return;
     setAudioLoading(true);
     try {
-      const url = await api.generateAudio(genScript, { lang: 'fa', speed: 1.0, voice });
+      const url = await api.generateAudio(genScript, { lang: genLanguage, speed: 1.0, voice });
       setAudioUrl(url);
       toast.success('فایل صوتی ساخته شد');
     } catch (e) {
@@ -116,6 +131,7 @@ export function PodcastTab({ podcasts, loading, onReload }: Props) {
         topic: topic.trim(),
         title: genTitle,
         script: genScript,
+        language: genLanguage,
         duration: genDuration,
         audioUrl,
       });
@@ -137,7 +153,7 @@ export function PodcastTab({ podcasts, loading, onReload }: Props) {
   const handleRegenerateAudio = async (p: Podcast) => {
     try {
       toast.message('در حال ساخت صدا...');
-      const url = await api.generateAudio(p.script, { lang: 'fa', speed: 1.0, voice });
+      const url = await api.generateAudio(p.script, { lang: p.language || 'fa', speed: 1.0, voice });
       await api.updatePodcast(p.id, { audioUrl: url });
       toast.success('صدا ساخته شد');
       onReload();
@@ -163,7 +179,7 @@ export function PodcastTab({ podcasts, loading, onReload }: Props) {
           <CardTitle className="flex items-center gap-2 text-emerald-700">
             <Mic size={18} /> تولید پادکست کوتاه
           </CardTitle>
-          <CardDescription>موضوع را بنویس، هوش مصنوعی متن پادکست می‌نویسد و صدای فارسی هم می‌سازد.</CardDescription>
+          <CardDescription>موضوع را بنویس، هوش مصنوعی متن پادکست می‌نویسد و صدای آن زبان هم می‌سازد.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -175,6 +191,28 @@ export function PodcastTab({ podcasts, loading, onReload }: Props) {
               placeholder="مثلاً: «چرا یادگیری زبان آلمانی مفید است؟» یا «۵ کلمه آلمانی برای سفر به برلین»"
               className="mt-1.5 min-h-[80px]"
             />
+          </div>
+
+          <div>
+            <Label>زبان پادکست</Label>
+            <div className="grid grid-cols-4 gap-2 mt-1.5">
+              {LANGUAGE_OPTIONS.map((l) => {
+                const active = language === l.value;
+                return (
+                  <button
+                    key={l.value}
+                    type="button"
+                    onClick={() => setLanguage(l.value)}
+                    className={`rounded-lg border p-2 text-center text-xs transition ${
+                      active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/30' : 'hover:bg-muted/40'
+                    }`}
+                  >
+                    <div className="text-lg leading-none">{l.flag}</div>
+                    <div className="mt-1 font-medium">{l.label}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>
@@ -350,6 +388,9 @@ export function PodcastTab({ podcasts, loading, onReload }: Props) {
                         <p className="text-xs text-muted-foreground mt-0.5">موضوع: {p.topic}</p>
                       )}
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <Badge variant="secondary" className="text-xs bg-violet-50 text-violet-700 border-violet-200">
+                          {LANG_LABEL[p.language] || p.language}
+                        </Badge>
                         {p.duration && (
                           <Badge variant="secondary" className="text-xs">
                             <Clock size={10} className="ml-1" /> {p.duration}

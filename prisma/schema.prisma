@@ -43,6 +43,7 @@ model Podcast {
   topic     String
   title     String
   script    String
+  language  String   @default("fa") // fa, de, en, fr, es, tr, ar
   duration  String?  // estimated duration like "2-3 min"
   audioUrl  String?  // path to TTS mp3 in /public/audio
   createdAt DateTime @default(now())

@@ -39,6 +39,7 @@ export interface Podcast {
   topic: string;
   title: string;
   script: string;
+  language: string;
   duration?: string | null;
   audioUrl?: string | null;
   createdAt: string;

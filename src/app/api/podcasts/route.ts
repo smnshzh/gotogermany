@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
         topic: body.topic?.trim() || '',
         title: body.title.trim(),
         script: body.script.trim(),
+        language: body.language?.trim() || 'fa',
         duration: body.duration?.trim() || null,
         audioUrl: body.audioUrl || null,
       },

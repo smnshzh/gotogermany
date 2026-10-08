@@ -91,3 +91,43 @@ Stage Summary:
 - Podcast feature is fully functional: input topic → AI writes script → AI generates Persian audio → save/list/replay
 - All lint checks pass
 - Existing word audio may still use old gTTS mp3s; new words/podcasts will use the better edge-tts voices
+
+---
+Task ID: multilang-podcast-and-telegram-bot
+Agent: main (Super Z)
+Task: (1) Make podcasts work in multiple languages (not just Persian). (2) Connect the site to Telegram via the user-provided bot token.
+
+Work Log:
+- Added `language` field to the Podcast Prisma model (fa/de/en/fr/es/tr/ar), default 'fa'
+- Rewrote `/api/ai/podcast/route.ts` with per-language system prompts, length guides, style guides, and duration fallback strings for 7 languages
+- Updated `Podcast` type, `generatePodcastScript` API client, `/api/podcasts` POST and PUT routes to accept and persist `language`
+- Updated `PodcastTab` UI:
+  - 7-language selector grid with flags (🇮🇷 🇩🇪 🇬🇧 🇫🇷 🇪🇸 🇹🇷 🇸🇦)
+  - Generated script keeps the chosen language (genLanguage state)
+  - Audio generation uses the chosen language
+  - Saved podcasts show a colored language badge (purple)
+- The TTS engine (edge-tts via `generate_tts.py`) already supports all 7 languages natively — no script changes needed
+- Verified end-to-end with Agent Browser: German podcast generated + German audio produced
+- Telegram bot setup:
+  - Verified bot token — bot is `@germanlearn2_bot`
+  - Created `mini-services/telegram-bot/` with its own `package.json` and `index.ts`
+  - Uses the project's Prisma client + SQLite database (no separate DB)
+  - Uses `z-ai-web-dev-sdk` for AI enrichment and podcast script generation
+  - Calls the existing `generate_tts.py` script for audio
+  - Long-polls Telegram for updates (no webhook/port needed)
+  - Commands implemented:
+    - `/start`, `/help` — Persian welcome + command list
+    - `/add <word>` — AI-enriches German word (article, plural, IPA, Persian translation, example) and saves to DB
+    - `/word <german>` — lookup by German or Persian
+    - `/words [n]` — list last N words
+    - `/cats` — list categories
+    - `/audio <german>` — sends German TTS audio file
+    - `/podcast <topic>` — generates Persian podcast script + audio, sends both, saves to DB
+    - `/stats` — word/category/podcast counts
+  - Plain text messages (without `/`) are treated as `/add <text>` for convenience
+- Bot started in background with `setsid nohup bun run index.ts`
+
+Stage Summary:
+- Podcasts now work in 7 languages: Persian, German, English, French, Spanish, Turkish, Arabic — each with native TTS voice
+- Telegram bot `@germanlearn2_bot` is live and responds to commands; it shares the same database as the web app
+- All lint checks pass
