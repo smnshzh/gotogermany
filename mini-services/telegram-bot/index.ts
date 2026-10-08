@@ -33,6 +33,7 @@ const API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const DB_URL = process.env.DATABASE_URL || 'file:/home/z/my-project/db/custom.db';
 const PROJECT_ROOT = '/home/z/my-project';
 const TTS_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'generate_tts.py');
+const PYTHON_BIN = '/home/z/.venv/bin/python3';
 const AUDIO_DIR = path.join(PROJECT_ROOT, 'public', 'audio');
 
 // Set DATABASE_URL for Prisma
@@ -136,7 +137,7 @@ async function generateAudio(text: string, lang: string, voice: string = 'defaul
   const id = crypto.randomBytes(8).toString('hex');
 
   // Run Python script
-  const { stdout } = await execFileAsync('python3', [
+  const { stdout } = await execFileAsync(PYTHON_BIN, [
     TTS_SCRIPT, '--text', text.slice(0, 3000), '--lang', lang, '--speed', String(speed), '--voice', voice,
   ], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, timeout: 60000 });
   const m = stdout.match(/OUT:(\S+)/);

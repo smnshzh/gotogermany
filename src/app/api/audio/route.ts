@@ -21,6 +21,7 @@ interface TtsResult {
 }
 
 const SCRIPT_PATH = '/home/z/my-project/scripts/generate_tts.py';
+const PYTHON_PATH = '/home/z/.venv/bin/python3';
 
 /**
  * Multilingual TTS using edge-tts (Microsoft Edge Neural TTS) as the primary engine.
@@ -36,13 +37,14 @@ async function generateTts({ text, lang = 'de', speed = 1.0, voice = 'default' }
     '--voice', voice,
   ];
   try {
-    const { stdout } = await execFileAsync('python3', args, {
+    const { stdout, stderr } = await execFileAsync(PYTHON_PATH, args, {
       encoding: 'utf-8',
       maxBuffer: 50 * 1024 * 1024,
       timeout: 60000,
     });
+    if (stderr) console.log('[tts] stderr:', stderr);
     const match = stdout.match(/OUT:(\S+)/);
-    if (!match) throw new Error('TTS script returned no output path');
+    if (!match) throw new Error('TTS script returned no output path. stdout=' + stdout);
     const outPath = match[1];
     const buffer = await fs.readFile(outPath);
     await fs.unlink(outPath).catch(() => {});

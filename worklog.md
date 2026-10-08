@@ -131,3 +131,29 @@ Stage Summary:
 - Podcasts now work in 7 languages: Persian, German, English, French, Spanish, Turkish, Arabic — each with native TTS voice
 - Telegram bot `@germanlearn2_bot` is live and responds to commands; it shares the same database as the web app
 - All lint checks pass
+
+---
+Task ID: natural-tts-upgrade
+Agent: main (Super Z)
+Task: Make TTS voices more natural (user said voices weren't natural enough).
+
+Work Log:
+- Diagnosed root cause: the dev server's PATH didn't include /home/z/.venv/bin (where piper, edge-tts, gtts were installed). The API was silently falling through every natural TTS engine and ending at espeak-ng (very robotic).
+- Installed piper-tts (offline neural TTS) — supports high-quality German voices.
+- Downloaded Piper German voice model: `de_DE-thorsten-high.onnx` (114 MB, very natural German pronunciation, runs entirely offline)
+- Updated `/home/z/my-project/scripts/generate_tts.py`:
+  - Added Piper as the primary engine for German (much more natural than edge-tts)
+  - Added prosody tweaks for all languages (slight rate/pitch adjustments to sound warmer and more natural)
+  - Updated edge-tts voice picks: now uses Katja (de-DE-KatjaNeural) as German default instead of Conrad, which sounds more natural for narration
+  - Last resort: gTTS, then espeak-ng
+- Hardcoded Python binary path `/home/z/.venv/bin/python3` in `/api/audio/route.ts` and `mini-services/telegram-bot/index.ts` so the Next.js dev server always finds the venv python (which has piper/edge-tts/gtts installed)
+- Wrote `/home/z/my-project/scripts/regenerate_all_audio.ts` to bulk-regenerate audio for all existing words and podcasts
+- Cleared all old audio files
+- Regenerated audio for all 9 existing words + 1 saved podcast — all now use the new natural voices
+- Verified with Agent Browser: Learn tab audio loads and plays new German Piper voice, Podcast tab plays the regenerated Persian edge-tts voice
+
+Stage Summary:
+- German voices now use Piper Thorsten High quality model — natural, native-quality pronunciation, offline
+- Persian voices use edge-tts Farid/Dilara Neural voices with subtle prosody tweaks — sounds warmer and less robotic
+- All 6 other supported languages (en, fr, es, tr, ar) also get edge-tts with prosody tweaks
+- Lint passes cleanly
